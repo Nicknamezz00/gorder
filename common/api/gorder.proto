@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+option go_package = "github.com/Nicknamezz00/proto";
+
+package proto;
+
+message Order {
+  string ID = 1;
+  string customerID = 2;
+  string Status = 3;
+  repeated Item Items = 4;
+}
+
+message Item {
+  string ID = 1;
+  string Name = 2;
+  int32 Quantity = 3;
+  string PriceID = 4;
+}
+
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns (Order);
+}
+
+message ItemWithQuantity {
+  string ID = 1;
+  int32 Quantity = 2;
+}
+
+message CreateOrderRequest {
+  string customerID = 1;
+  repeated ItemWithQuantity Items = 2;
+}
+

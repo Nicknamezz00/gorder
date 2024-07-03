@@ -1,0 +1,53 @@
+# Binary files
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go workspace file
+# go.work
+go.work.sum
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Build directory
+/build/
+bin/
+*.log
+
+# Dependency directories (remove the comment below if you use Go modules)
+/vendor/
+/vendor/**
+
+# Editor and IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
+*.tmproj
+
+# LiteIDE project files
+*.prj
+
+# VS Code workspace settings
+.vscode/
+
+# GoLand IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+
+**/tmp/
