@@ -6,6 +6,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/Nicknamezz00/pkg/broker"
 	"github.com/Nicknamezz00/pkg/discovery"
 	"github.com/Nicknamezz00/pkg/discovery/consul"
 	"github.com/Nicknamezz00/pkg/envutil"
@@ -19,8 +20,12 @@ const (
 
 var (
 	// expose grpc port to the outside
-	grpcAddr   = envutil.EnvString("GRPC_ADDR", "127.0.0.1:5000")
-	consulAddr = envutil.EnvString("CONSUL_ADDR", "127.0.0.1:8500")
+	grpcAddr     = envutil.EnvString("GRPC_ADDR", "127.0.0.1:5000")
+	consulAddr   = envutil.EnvString("CONSUL_ADDR", "127.0.0.1:8500")
+	amqpUser     = envutil.EnvString("RABBITMQ_USER", "guest")
+	amqpPassword = envutil.EnvString("RABBITMQ_PASSWORD", "guest")
+	amqpHost     = envutil.EnvString("RABBITMQ_HOST", "127.0.0.1")
+	amqpPort     = envutil.EnvString("RABBITMQ_PORT", "5672")
 )
 
 func main() {
@@ -42,6 +47,12 @@ func main() {
 	}()
 	defer registry.Deregister(context.Background(), instanceID, serviceName)
 
+	ch, connClose := broker.Connect(amqpUser, amqpPassword, amqpHost, amqpPort)
+	defer func() {
+		ch.Close()
+		connClose()
+	}()
+
 	grpcSrv := grpc.NewServer()
 	l, err := net.Listen("tcp", grpcAddr)
 	if err != nil {
@@ -51,7 +62,7 @@ func main() {
 
 	store := NewStore()
 	svc := NewService(store)
-	NewGRPCHandler(grpcSrv, svc)
+	NewGRPCHandler(grpcSrv, svc, ch)
 
 	log.Printf("starting grpc server at %s", grpcAddr)
 	svc.CreateOrder(context.Background())
