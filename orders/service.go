@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
-	pb "github.com/Nicknamezz00/gorder-common/api"
-	"github.com/Nicknamezz00/gorder-common/errcode"
+	pb "github.com/Nicknamezz00/pkg/api"
+	"github.com/Nicknamezz00/pkg/errcode"
 )
 
 type OrderService interface {

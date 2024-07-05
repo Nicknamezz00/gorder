@@ -1,14 +1,16 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"time"
 
-	common "github.com/Nicknamezz00/gorder-common"
-	pb "github.com/Nicknamezz00/gorder-common/api"
+	"github.com/Nicknamezz00/gorder-gateway/entry"
+	"github.com/Nicknamezz00/pkg/discovery"
+	"github.com/Nicknamezz00/pkg/discovery/consul"
+	"github.com/Nicknamezz00/pkg/envutil"
 	_ "github.com/joho/godotenv/autoload"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
@@ -16,22 +18,33 @@ const (
 )
 
 var (
-	httpAddr     = common.EnvString("HTTP_ADDR", ":8080")
-	orderService = "127.0.0.1:5000"
+	// expose http port to the outside
+	httpAddr   = envutil.EnvString("HTTP_ADDR", ":8080")
+	consulAddr = envutil.EnvString("CONSUL_ADDR", "127.0.0.1:8500")
 )
 
 func main() {
-	conn, err := grpc.Dial(orderService, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	registry, err := consul.NewRegistry(consulAddr, serviceName)
 	if err != nil {
-		log.Fatalf("failed to dial server: %v", err)
+		panic(err)
 	}
-	defer conn.Close()
-	log.Printf("dialing order service at: %s", orderService)
-
-	c := pb.NewOrderServiceClient(conn)
+	instanceID := discovery.GenerateInstanceID(serviceName)
+	if err := registry.Register(context.Background(), instanceID, serviceName, httpAddr); err != nil {
+		panic(err)
+	}
+	go func() {
+		for {
+			if err := registry.HeartBeat(instanceID, serviceName); err != nil {
+				log.Fatalf("no heartbeat: %s", serviceName)
+			}
+			time.Sleep(1 * time.Second)
+		}
+	}()
+	defer registry.Deregister(context.Background(), instanceID, serviceName)
 
 	mux := http.NewServeMux()
-	handler := NewHandler(c)
+	ordersEntry := entry.NewGRPCEntry(registry)
+	handler := NewHandler(ordersEntry)
 	handler.registerRoutes(mux)
 
 	log.Printf("starting http server at %s", httpAddr)

@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	pb "github.com/Nicknamezz00/gorder-common/api"
+	pb "github.com/Nicknamezz00/pkg/api"
 	"google.golang.org/grpc"
 )
 
@@ -21,7 +21,7 @@ func NewGRPCHandler(grpcServer *grpc.Server, service OrderService) {
 }
 
 func (h *grpcHandler) CreateOrder(ctx context.Context, req *pb.CreateOrderRequest) (*pb.Order, error) {
-	log.Println("new order created, order: %v", req)
+	log.Printf("new order created, order: %v", req)
 	o := &pb.Order{
 		ID: "37",
 	}
