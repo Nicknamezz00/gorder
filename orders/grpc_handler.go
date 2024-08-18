@@ -25,10 +25,18 @@ func NewGRPCHandler(grpcServer *grpc.Server, service OrderService, mqChannel *am
 	pb.RegisterOrderServiceServer(grpcServer, h)
 }
 
+func (h *grpcHandler) GetOrder(ctx context.Context, req *pb.GetOrderRequest) (*pb.Order, error) {
+	return h.service.GetOrder(ctx, req)
+}
+
 func (h *grpcHandler) CreateOrder(ctx context.Context, req *pb.CreateOrderRequest) (*pb.Order, error) {
-	log.Printf("new order created, order: %v", req)
-	o := &pb.Order{
-		ID: "37",
+	items, err := h.service.ValidateOrder(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	o, err := h.service.CreateOrder(ctx, req, items)
+	if err != nil {
+		return nil, err
 	}
 	q, err := h.mqChannel.QueueDeclare(broker.OrderCreatedEvent, true, false, false, false, nil)
 	if err != nil {

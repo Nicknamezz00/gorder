@@ -6,26 +6,29 @@ import (
 	"net"
 	"time"
 
+	stripeProcessor "github.com/Nicknamezz00/gorder-payments/processor/stripe"
 	"github.com/Nicknamezz00/pkg/broker"
 	"github.com/Nicknamezz00/pkg/discovery"
 	"github.com/Nicknamezz00/pkg/discovery/consul"
 	"github.com/Nicknamezz00/pkg/envutil"
 	_ "github.com/joho/godotenv/autoload"
+	"github.com/stripe/stripe-go/v79"
 	"google.golang.org/grpc"
 )
 
 const (
-	serviceName = "orders"
+	serviceName = "payments"
 )
 
 var (
 	// expose grpc port to the outside
-	grpcAddr     = envutil.EnvString("GRPC_ADDR", "127.0.0.1:5000")
+	grpcAddr     = envutil.EnvString("GRPC_ADDR", "127.0.0.1:5001")
 	consulAddr   = envutil.EnvString("CONSUL_ADDR", "127.0.0.1:8500")
 	amqpUser     = envutil.EnvString("RABBITMQ_USER", "guest")
 	amqpPassword = envutil.EnvString("RABBITMQ_PASSWORD", "guest")
 	amqpHost     = envutil.EnvString("RABBITMQ_HOST", "127.0.0.1")
 	amqpPort     = envutil.EnvString("RABBITMQ_PORT", "5672")
+	stripeKey    = envutil.EnvString("STRIPE_KEY", "")
 )
 
 func main() {
@@ -47,12 +50,24 @@ func main() {
 	}()
 	defer registry.Deregister(context.Background(), instanceID, serviceName)
 
+	// stripe hook
+	stripe.Key = stripeKey
+	stripeProcessor := stripeProcessor.NewProcessor()
+
+	// broker
 	ch, connClose := broker.Connect(amqpUser, amqpPassword, amqpHost, amqpPort)
 	defer func() {
 		ch.Close()
 		connClose()
 	}()
 
+	// service
+	svc := NewService(stripeProcessor)
+	// rabbitmq
+	amqpConsumer := NewConsumer(svc)
+	go amqpConsumer.Listen(ch)
+
+	// grpc
 	grpcSrv := grpc.NewServer()
 	l, err := net.Listen("tcp", grpcAddr)
 	if err != nil {
@@ -60,12 +75,7 @@ func main() {
 	}
 	defer l.Close()
 
-	store := NewStore()
-	svc := NewService(store)
-	NewGRPCHandler(grpcSrv, svc, ch)
-
 	log.Printf("starting grpc server at %s", grpcAddr)
-	// svc.CreateOrder(context.Background())
 	if err := grpcSrv.Serve(l); err != nil {
 		log.Fatal(err.Error())
 	}

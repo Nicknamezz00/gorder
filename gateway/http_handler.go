@@ -23,7 +23,10 @@ func NewHandler(entry entry.OrdersEntry) *handler {
 }
 
 func (h *handler) registerRoutes(mux *http.ServeMux) {
+	// embed static files
+	mux.Handle("/", http.FileServer(http.Dir("public")))
 	mux.HandleFunc("POST /api/customers/{customerID}/orders", h.HandleCreateOrder)
+	mux.HandleFunc("GET /api/customers/{customerID}/orders/{orderID}", h.HandleGetOrder)
 }
 
 func (h *handler) HandleCreateOrder(w http.ResponseWriter, r *http.Request) {
@@ -67,4 +70,20 @@ func validate(items []*pb.ItemWithQuantity) error {
 		}
 	}
 	return nil
+}
+
+func (h *handler) HandleGetOrder(w http.ResponseWriter, r *http.Request) {
+	customerID := r.PathValue("customerID")
+	orderID := r.PathValue("orderID")
+	o, err := h.entry.GetOrder(r.Context(), orderID, customerID)
+	err2 := status.Convert(err)
+	if err2 != nil {
+		if err2.Code() != codes.InvalidArgument {
+			jsonutil.WriteWithError(w, http.StatusBadRequest, err2.Message())
+			return
+		}
+		jsonutil.WriteWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	jsonutil.WriteJSON(w, http.StatusOK, o)
 }

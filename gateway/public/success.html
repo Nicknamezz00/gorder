@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<head>
+  <title>Thanks for your purchase!</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<html>
+  <body>
+    <section>
+      <p>
+        Your order has been placed successfully!
+      </p>
+      <p>
+        Order status: <span id="orderStatus">Pending...</span>
+      </p>
+      <div class="ready-popup">
+        <p>Your order is ready for pickup!</p>
+        <p style="margin:10px;color:brown">
+          Order number <b>#<span id=orderID></span></b>
+        </p>
+        
+        <button class="close-btn" onclick="document.querySelector('.ready-popup').style.display = 'none'">
+          Close
+        </button>
+      </div>
+      <div class="payment-popup">
+        <p>Waiting...</p>
+        <a id="payment-link" href="#">Go to payment</a>
+      </div>
+    </section>
+  </body>
+
+  <script>
+    const urlParam = new URLSearchParams(window.location.search);
+    const customerID = urlParam.get('customerID');
+    const orderID = urlParam.get('orderID');
+    const order = {
+      customerID,
+      orderID,
+      status: 'pending'
+    };
+    const getOrder = async() => {
+      const response = await fetch(`/api/customers/${customerID}/orders/${orderID}`);
+      const data = await response.json();
+      if (data.Status === 'waiting_for_payment') {
+        order.Status = 'Waiting for payment...';
+        document.getElementById('orderStatus').innerText = order.Status;
+        document.querySelector('.payment-popup').style.display = 'block';
+        document.getElementById('payment-link').href = data.PaymentLink;
+      }
+      if (data.Status === 'paid') {
+        order.Status = 'Your order has been paid, please wait...';
+        document.getElementById('orderStatus').innerText = order.Status;
+        setTimeout(getOrder, 5000);
+      } else if (data.Status === 'ready') {
+        order.Status = 'ready';
+        document.querySelector('.payment-popup').style.display = 'none';
+        document.querySelector('.ready-popup').style.display = 'block';
+        document.getElementById('orderStatus').innerText = order.Status;
+        document.getElementById('orderID').innerText = orderID;
+      } else {
+        setTimeout(getOrder, 5000);
+      }
+    };
+    getOrder();
+  </script>
+  <style>
+    html {
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      margin: 0;
+      padding: 0;
+      background-color: wheat;
+      color: #333333;
+    }
+  
+    section {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+  
+    .ready-popup {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 20px;
+      background-color: #f9f9f9;
+      border: 2px solid green;
+      border-radius: 5px;
+      z-index: 1;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+    }
+  
+    .payment-popup {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 20px;
+      background-color: #f9f9f9;
+      border: 2px solid green;
+      border-radius: 5px;
+      z-index: 1;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+    }
+  
+    .payment-popup a {
+      margin-top: 10px;
+      padding: 5px 10px;
+      background-color: green;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+  
+    .ready-popup p {
+      margin: 0;
+    }
+  
+    .close-btn {
+      margin-top: 10px;
+      padding: 5px 10px;
+      background-color: green;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+  
+    }
+  </style>
+</html>

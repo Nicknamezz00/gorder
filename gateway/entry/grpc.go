@@ -30,3 +30,18 @@ func (e *entry) CreateOrder(ctx context.Context, req *pb.CreateOrderRequest) (*p
 		Items:      req.Items,
 	})
 }
+
+func (e *entry) GetOrder(ctx context.Context, orderID, customerID string) (*pb.Order, error) {
+	conn, err := discovery.GetService(ctx, "orders", e.registry)
+	if err != nil {
+		log.Fatalf("failed to dial server: %v", err)
+		return nil, err
+	}
+	c := pb.NewOrderServiceClient(conn)
+	ret, er := c.GetOrder(ctx, &pb.GetOrderRequest{
+		OrderID:    orderID,
+		CustomerID: customerID,
+	})
+	log.Printf("GetOrder, ret = %v, er = %v", ret, er)
+	return ret, er
+}
