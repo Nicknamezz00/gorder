@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/Nicknamezz00/pkg/middleware"
 	"log"
 	"net"
 	"time"
@@ -29,9 +30,14 @@ var (
 	amqpHost     = envutil.EnvString("RABBITMQ_HOST", "127.0.0.1")
 	amqpPort     = envutil.EnvString("RABBITMQ_PORT", "5672")
 	stripeKey    = envutil.EnvString("STRIPE_KEY", "")
+	jaegerAddr   = envutil.EnvString("JAEGER_ADDR", "127.0.0.1:4318")
 )
 
 func main() {
+	if err := middleware.SetGlobalTracer(context.TODO(), serviceName, jaegerAddr); err != nil {
+		log.Fatal("failed to set global tracer")
+	}
+
 	registry, err := consul.NewRegistry(consulAddr, serviceName)
 	if err != nil {
 		panic(err)

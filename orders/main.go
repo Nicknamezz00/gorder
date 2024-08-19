@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/Nicknamezz00/pkg/middleware"
 	"log"
 	"net"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/Nicknamezz00/pkg/discovery/consul"
 	"github.com/Nicknamezz00/pkg/envutil"
 	_ "github.com/joho/godotenv/autoload"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
@@ -26,13 +28,25 @@ var (
 	amqpPassword = envutil.EnvString("RABBITMQ_PASSWORD", "guest")
 	amqpHost     = envutil.EnvString("RABBITMQ_HOST", "127.0.0.1")
 	amqpPort     = envutil.EnvString("RABBITMQ_PORT", "5672")
+	jaegerAddr   = envutil.EnvString("JAEGER_ADDR", "127.0.0.1:4318")
 )
 
 func main() {
+	logger, _ := zap.NewProduction()
+	defer func(logger *zap.Logger) {
+		_ = logger.Sync()
+	}(logger)
+	zap.ReplaceGlobals(logger)
+
+	if err := middleware.SetGlobalTracer(context.Background(), serviceName, jaegerAddr); err != nil {
+		logger.Fatal("could set global tracer", zap.Error(err))
+	}
+
 	registry, err := consul.NewRegistry(consulAddr, serviceName)
 	if err != nil {
 		panic(err)
 	}
+
 	instanceID := discovery.GenerateInstanceID(serviceName)
 	if err := registry.Register(context.Background(), instanceID, serviceName, grpcAddr); err != nil {
 		panic(err)
@@ -49,8 +63,8 @@ func main() {
 
 	ch, connClose := broker.Connect(amqpUser, amqpPassword, amqpHost, amqpPort)
 	defer func() {
-		ch.Close()
-		connClose()
+		_ = ch.Close()
+		_ = connClose()
 	}()
 
 	grpcSrv := grpc.NewServer()
@@ -64,7 +78,7 @@ func main() {
 	svc := NewService(store)
 	NewGRPCHandler(grpcSrv, svc, ch)
 
-	log.Printf("starting grpc server at %s", grpcAddr)
+	logger.Info("starting grpc server at %s", zap.String("grpcAddr", grpcAddr))
 	// svc.CreateOrder(context.Background())
 	if err := grpcSrv.Serve(l); err != nil {
 		log.Fatal(err.Error())

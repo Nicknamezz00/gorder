@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/Nicknamezz00/pkg/middleware"
 	"log"
 	"net/http"
 	"time"
@@ -21,17 +22,25 @@ var (
 	// expose http port to the outside
 	httpAddr   = envutil.EnvString("HTTP_ADDR", ":8080")
 	consulAddr = envutil.EnvString("CONSUL_ADDR", "127.0.0.1:8500")
+	jaegerAddr = envutil.EnvString("JAEGER_ADDR", "127.0.0.1:4318")
 )
 
 func main() {
+	err := middleware.SetGlobalTracer(context.Background(), serviceName, jaegerAddr)
+	if err != nil {
+		log.Fatal("failed to set global tracer")
+	}
+
 	registry, err := consul.NewRegistry(consulAddr, serviceName)
 	if err != nil {
 		panic(err)
 	}
+
 	instanceID := discovery.GenerateInstanceID(serviceName)
 	if err := registry.Register(context.Background(), instanceID, serviceName, httpAddr); err != nil {
 		panic(err)
 	}
+
 	go func() {
 		for {
 			if err := registry.HeartBeat(instanceID, serviceName); err != nil {
