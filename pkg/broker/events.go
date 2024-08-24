@@ -1,6 +1,6 @@
 package broker
 
 const (
-	OrderCreatedEvent = "order.created"
-	OrderPaidEvent    = "order.paid"
+	ORDER_CREATED_EVENT = "order.created"
+	ORDER_PAID_EVENT    = "order.paid"
 )

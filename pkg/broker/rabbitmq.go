@@ -17,11 +17,11 @@ func Connect(user, password, host, port string) (*amqp.Channel, func() error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = ch.ExchangeDeclare(OrderCreatedEvent, "direct", true, false, false, false, nil)
+	err = ch.ExchangeDeclare(ORDER_CREATED_EVENT, "direct", true, false, false, false, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = ch.ExchangeDeclare(OrderPaidEvent, "fanout", true, false, false, false, nil)
+	err = ch.ExchangeDeclare(ORDER_PAID_EVENT, "fanout", true, false, false, false, nil)
 	if err != nil {
 		log.Fatal(err)
 	}

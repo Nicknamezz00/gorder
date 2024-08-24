@@ -14,5 +14,5 @@ func GetService(ctx context.Context, serviceName string, registry Registry) (*gr
 		return nil, err
 	}
 	i := rand.Intn(len(addrs))
-	return grpc.Dial(addrs[i], grpc.WithTransportCredentials(insecure.NewCredentials()))
+	return grpc.NewClient(addrs[i], grpc.WithTransportCredentials(insecure.NewCredentials()))
 }
