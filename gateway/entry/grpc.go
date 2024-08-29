@@ -42,6 +42,5 @@ func (e *entry) GetOrder(ctx context.Context, orderID, customerID string) (*pb.O
 		OrderID:    orderID,
 		CustomerID: customerID,
 	})
-	log.Printf("GetOrder, ret = %v, er = %v", ret, er)
 	return ret, er
 }

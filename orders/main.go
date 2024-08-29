@@ -78,6 +78,9 @@ func main() {
 	svc := NewService(store)
 	NewGRPCHandler(grpcSrv, svc, ch)
 
+	consumer := NewConsumer(svc)
+	go consumer.Listen(ch)
+
 	logger.Info("starting grpc server at %s", zap.String("grpcAddr", grpcAddr))
 	// svc.CreateOrder(context.Background())
 	if err := grpcSrv.Serve(l); err != nil {

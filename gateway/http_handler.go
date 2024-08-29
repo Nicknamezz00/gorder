@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/Nicknamezz00/gorder-gateway/entry"
@@ -54,7 +55,11 @@ func (h *handler) HandleCreateOrder(w http.ResponseWriter, r *http.Request) {
 		jsonutil.WriteWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	jsonutil.WriteJSON(w, http.StatusOK, o)
+	res := &CreateOrderRequest{
+		Order:         o,
+		RedirectToURL: fmt.Sprintf("http://localhost:8080/success.html?customerID=%s&orderID=%s", o.CustomerID, o.ID),
+	}
+	jsonutil.WriteJSON(w, http.StatusOK, res)
 }
 
 func validate(items []*pb.ItemWithQuantity) error {

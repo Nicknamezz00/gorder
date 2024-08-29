@@ -2,16 +2,16 @@ package main
 
 import (
 	"context"
-	"log"
-
 	pb "github.com/Nicknamezz00/pkg/api"
 	"github.com/Nicknamezz00/pkg/errcode"
+	"log"
 )
 
 type OrderService interface {
 	CreateOrder(context.Context, *pb.CreateOrderRequest, []*pb.Item) (*pb.Order, error)
 	ValidateOrder(context.Context, *pb.CreateOrderRequest) ([]*pb.Item, error)
 	GetOrder(context.Context, *pb.GetOrderRequest) (*pb.Order, error)
+	UpdateOrder(context.Context, *pb.Order) (*pb.Order, error)
 }
 
 type service struct {
@@ -42,16 +42,21 @@ func (s *service) CreateOrder(ctx context.Context, req *pb.CreateOrderRequest, i
 	return o, nil
 }
 
+func (s *service) UpdateOrder(ctx context.Context, o *pb.Order) (*pb.Order, error) {
+	err := s.store.Update(ctx, o.ID, o)
+	if err != nil {
+		return nil, err
+	}
+	return o, nil
+}
+
 func (s *service) ValidateOrder(ctx context.Context, req *pb.CreateOrderRequest) ([]*pb.Item, error) {
 	if len(req.Items) == 0 {
 		return nil, errcode.ErrNoItems
 	}
-	// items := packItems(req.Items)
-	log.Printf("packed items: %v", packItems(req.Items))
-	log.Printf("slow packed items: %v", packItemsSlow(req.Items))
-	// panic("implement stock")
 	var itemsWithPrice []*pb.Item
 	mergedItems := packItems(req.Items)
+	log.Printf("merged items: %v", mergedItems)
 	for _, it := range mergedItems {
 		itemsWithPrice = append(itemsWithPrice, &pb.Item{
 			PriceID:  "-1",

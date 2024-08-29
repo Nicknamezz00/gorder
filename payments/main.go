@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"github.com/Nicknamezz00/gorder-payments/entry"
 	"github.com/Nicknamezz00/pkg/middleware"
 	"log"
 	"net"
+	"net/http"
 	"time"
 
 	stripeProcessor "github.com/Nicknamezz00/gorder-payments/processor/stripe"
@@ -23,6 +25,7 @@ const (
 
 var (
 	// expose grpc port to the outside
+	httpAddr     = envutil.EnvString("HTTP_ADDR", "127.0.0.1:8081")
 	grpcAddr     = envutil.EnvString("GRPC_ADDR", "127.0.0.1:5001")
 	consulAddr   = envutil.EnvString("CONSUL_ADDR", "127.0.0.1:8500")
 	amqpUser     = envutil.EnvString("RABBITMQ_USER", "guest")
@@ -31,6 +34,8 @@ var (
 	amqpPort     = envutil.EnvString("RABBITMQ_PORT", "5672")
 	stripeKey    = envutil.EnvString("STRIPE_KEY", "")
 	jaegerAddr   = envutil.EnvString("JAEGER_ADDR", "127.0.0.1:4318")
+	//endpointStripeSecret: stripe listen --forward-to localhost:8081/webhook
+	endpointStripeSecret = envutil.EnvString("ENDPOINT_STRIPE_SECRET", "whsec....")
 )
 
 func main() {
@@ -56,9 +61,9 @@ func main() {
 	}()
 	defer registry.Deregister(context.Background(), instanceID, serviceName)
 
-	// stripe hook
+	// stripeProcessor hook
 	stripe.Key = stripeKey
-	stripeProcessor := stripeProcessor.NewProcessor()
+	stripeProc := stripeProcessor.NewProcessor()
 
 	// broker
 	ch, connClose := broker.Connect(amqpUser, amqpPassword, amqpHost, amqpPort)
@@ -68,11 +73,23 @@ func main() {
 	}()
 
 	// service
-	svc := NewService(stripeProcessor)
+	paymentGateway := entry.NewGRPCEntry(registry)
+	svc := NewService(stripeProc, paymentGateway)
+
 	// rabbitmq
 	amqpConsumer := NewConsumer(svc)
 	go amqpConsumer.Listen(ch)
 
+	// http server
+	mux := http.NewServeMux()
+	httpServer := NewPaymentHandler(ch)
+	httpServer.registerRoutes(mux)
+	go func() {
+		log.Printf("starting payment http server at %s", httpAddr)
+		if err := http.ListenAndServe(httpAddr, mux); err != nil {
+			log.Fatalf("failed to start payment http server, err: %v", err)
+		}
+	}()
 	// grpc
 	grpcSrv := grpc.NewServer()
 	l, err := net.Listen("tcp", grpcAddr)

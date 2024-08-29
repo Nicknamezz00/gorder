@@ -38,7 +38,7 @@ func (h *grpcHandler) CreateOrder(ctx context.Context, req *pb.CreateOrderReques
 	if err != nil {
 		return nil, err
 	}
-	q, err := h.mqChannel.QueueDeclare(broker.OrderCreatedEvent, true, false, false, false, nil)
+	q, err := h.mqChannel.QueueDeclare(broker.OrderCreated, true, false, false, false, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -46,10 +46,15 @@ func (h *grpcHandler) CreateOrder(ctx context.Context, req *pb.CreateOrderReques
 	if err != nil {
 		log.Fatal(err)
 	}
-	h.mqChannel.PublishWithContext(ctx, "", q.Name, false, false, amqp.Publishing{
+	_ = h.mqChannel.PublishWithContext(ctx, "", q.Name, false, false, amqp.Publishing{
 		ContentType:  "application/json",
 		Body:         marshalledOrder,
 		DeliveryMode: amqp.Persistent,
 	})
+	log.Printf("[CreateOrder] msg published: %s", string(marshalledOrder))
 	return o, nil
+}
+
+func (h *grpcHandler) UpdateOrder(ctx context.Context, order *pb.Order) (*pb.Order, error) {
+	return h.service.UpdateOrder(ctx, order)
 }

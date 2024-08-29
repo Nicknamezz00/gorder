@@ -21,18 +21,18 @@ func NewConsumer(service PaymentsService) *consumer {
 }
 
 func (c *consumer) Listen(ch *amqp.Channel) {
-	q, err := ch.QueueDeclare(broker.OrderCreatedEvent, true, false, false, false, nil)
+	q, err := ch.QueueDeclare(broker.OrderCreated, true, false, false, false, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	msgs, err := ch.Consume(q.Name, "", true, false, false, false, nil)
+	msgs, err := ch.Consume(q.Name, "", false, false, false, false, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	var forever chan struct{}
 	go func() {
 		for msg := range msgs {
-			log.Printf("received message: %s", msg.Body)
+			log.Printf("received message from queue %s: %s", q.Name, msg.Body)
 			o := &pb.Order{}
 			if err := json.Unmarshal(msg.Body, o); err != nil {
 				log.Printf("failed to unmarshal order: %v", err)
@@ -43,7 +43,9 @@ func (c *consumer) Listen(ch *amqp.Channel) {
 				log.Printf("failed to create payment link: %v", err)
 				continue
 			}
+
 			log.Printf("payment link: %s", link)
+			_ = msg.Ack(false)
 		}
 	}()
 	<-forever
