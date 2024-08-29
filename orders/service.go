@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	pb "github.com/Nicknamezz00/pkg/api"
-	"github.com/Nicknamezz00/pkg/errcode"
+	pb "github.com/Nicknamezz00/gorder/pkg/api"
+	"github.com/Nicknamezz00/gorder/pkg/errcode"
 	"log"
 )
 

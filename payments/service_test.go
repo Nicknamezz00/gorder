@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	pb "github.com/Nicknamezz00/pkg/api"
+	pb "github.com/Nicknamezz00/gorder/pkg/api"
 )
 
 type testProcessor struct{}

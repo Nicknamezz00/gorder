@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	pb "github.com/Nicknamezz00/pkg/api"
-	"github.com/Nicknamezz00/pkg/envutil"
+	pb "github.com/Nicknamezz00/gorder/pkg/api"
+	"github.com/Nicknamezz00/gorder/pkg/envutil"
 	"github.com/stripe/stripe-go/v79"
 	"github.com/stripe/stripe-go/v79/checkout/session"
 )
@@ -27,7 +27,7 @@ func (s *Stripe) CreatePaymentLink(o *pb.Order) (string, error) {
 	items := []*stripe.CheckoutSessionLineItemParams{}
 	for _, it := range o.Items {
 		items = append(items, &stripe.CheckoutSessionLineItemParams{
-			Price:    stripe.String("price_1PZEDmRuyMJmUCSsNZPk8lJF"),
+			Price:    stripe.String(it.PriceID),
 			Quantity: stripe.Int64(int64(it.Quantity)),
 		})
 	}

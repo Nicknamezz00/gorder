@@ -3,7 +3,7 @@ package entry
 import (
 	"context"
 
-	pb "github.com/Nicknamezz00/pkg/api"
+	pb "github.com/Nicknamezz00/gorder/pkg/api"
 )
 
 type OrdersEntry interface {

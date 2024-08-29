@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Nicknamezz00/gorder-gateway/entry"
-	pb "github.com/Nicknamezz00/pkg/api"
-	"github.com/Nicknamezz00/pkg/errcode"
-	"github.com/Nicknamezz00/pkg/jsonutil"
+	"github.com/Nicknamezz00/gorder/gateway/entry"
+	pb "github.com/Nicknamezz00/gorder/pkg/api"
+	"github.com/Nicknamezz00/gorder/pkg/errcode"
+	"github.com/Nicknamezz00/gorder/pkg/jsonutil"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

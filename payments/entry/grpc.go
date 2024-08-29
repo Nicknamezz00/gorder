@@ -2,8 +2,8 @@ package entry
 
 import (
 	"context"
-	pb "github.com/Nicknamezz00/pkg/api"
-	"github.com/Nicknamezz00/pkg/discovery"
+	pb "github.com/Nicknamezz00/gorder/pkg/api"
+	"github.com/Nicknamezz00/gorder/pkg/discovery"
 	"log"
 )
 

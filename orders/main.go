@@ -2,15 +2,15 @@ package main
 
 import (
 	"context"
-	"github.com/Nicknamezz00/pkg/middleware"
+	"github.com/Nicknamezz00/gorder/pkg/middleware"
 	"log"
 	"net"
 	"time"
 
-	"github.com/Nicknamezz00/pkg/broker"
-	"github.com/Nicknamezz00/pkg/discovery"
-	"github.com/Nicknamezz00/pkg/discovery/consul"
-	"github.com/Nicknamezz00/pkg/envutil"
+	"github.com/Nicknamezz00/gorder/pkg/broker"
+	"github.com/Nicknamezz00/gorder/pkg/discovery"
+	"github.com/Nicknamezz00/gorder/pkg/discovery/consul"
+	"github.com/Nicknamezz00/gorder/pkg/envutil"
 	_ "github.com/joho/godotenv/autoload"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"

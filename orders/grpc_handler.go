@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"log"
 
-	pb "github.com/Nicknamezz00/pkg/api"
-	"github.com/Nicknamezz00/pkg/broker"
+	pb "github.com/Nicknamezz00/gorder/pkg/api"
+	"github.com/Nicknamezz00/gorder/pkg/broker"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"google.golang.org/grpc"
 )

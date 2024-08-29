@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"github.com/Nicknamezz00/gorder-payments/entry"
+	"github.com/Nicknamezz00/gorder/payments/entry"
 
-	"github.com/Nicknamezz00/gorder-payments/processor"
-	pb "github.com/Nicknamezz00/pkg/api"
+	"github.com/Nicknamezz00/gorder/payments/processor"
+	pb "github.com/Nicknamezz00/gorder/pkg/api"
 )
 
 type PaymentsService interface {
