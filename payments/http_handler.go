@@ -41,7 +41,6 @@ func (h *PaymentHandler) handleWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	event, err := webhook.ConstructEvent(body, r.Header.Get("Stripe-Signature"), endpointStripeSecret)
-	log.Printf("got event: %v", event)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error verifying webhook signature: %v\n", err)

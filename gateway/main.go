@@ -26,25 +26,30 @@ var (
 )
 
 func main() {
-	err := middleware.SetGlobalTracer(context.Background(), serviceName, jaegerAddr)
+	shutdownTracerProvider, err := middleware.SetGlobalTracer(context.Background(), serviceName, jaegerAddr)
 	if err != nil {
-		log.Fatal("failed to set global tracer")
+		log.Fatal(err)
 	}
+	defer func() {
+		if err := shutdownTracerProvider(context.Background()); err != nil {
+			log.Fatalf("failed to shutdown TracerProvider: %s", err)
+		}
+	}()
 
 	registry, err := consul.NewRegistry(consulAddr, serviceName)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	instanceID := discovery.GenerateInstanceID(serviceName)
 	if err := registry.Register(context.Background(), instanceID, serviceName, httpAddr); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	go func() {
 		for {
 			if err := registry.HeartBeat(instanceID, serviceName); err != nil {
-				log.Fatalf("no heartbeat: %s", serviceName)
+				log.Fatalf("no heartbeat from %s to registry, err = %v", serviceName, err)
 			}
 			time.Sleep(1 * time.Second)
 		}

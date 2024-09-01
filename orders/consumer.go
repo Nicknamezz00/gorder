@@ -54,7 +54,6 @@ func (c *consumer) Listen(ch *amqp.Channel) {
 			}
 
 			_, err := c.service.UpdateOrder(context.Background(), o)
-			log.Printf("c.service.UpdateOrder(context.Background(), o)")
 			if err != nil {
 				log.Printf("failed to update order: %v", err)
 				if err := broker.HandleRetry(ch, &d); err != nil {

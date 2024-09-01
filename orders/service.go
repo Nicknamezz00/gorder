@@ -58,8 +58,9 @@ func (s *service) ValidateOrder(ctx context.Context, req *pb.CreateOrderRequest)
 	mergedItems := packItems(req.Items)
 	log.Printf("merged items: %v", mergedItems)
 	for _, it := range mergedItems {
+		// PRICEID
 		itemsWithPrice = append(itemsWithPrice, &pb.Item{
-			PriceID:  "-1",
+			PriceID:  "price_1PZEDmRuyMJmUCSsNZPk8lJF",
 			ID:       it.ID,
 			Quantity: it.Quantity,
 		})

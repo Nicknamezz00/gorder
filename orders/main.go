@@ -38,23 +38,29 @@ func main() {
 	}(logger)
 	zap.ReplaceGlobals(logger)
 
-	if err := middleware.SetGlobalTracer(context.Background(), serviceName, jaegerAddr); err != nil {
-		logger.Fatal("could set global tracer", zap.Error(err))
+	shutdownTracerProvider, err := middleware.SetGlobalTracer(context.Background(), serviceName, jaegerAddr)
+	if err != nil {
+		log.Fatal(err.Error())
 	}
+	defer func() {
+		if err := shutdownTracerProvider(context.Background()); err != nil {
+			log.Fatalf("failed to shutdown TracerProvider: %s", err)
+		}
+	}()
 
 	registry, err := consul.NewRegistry(consulAddr, serviceName)
 	if err != nil {
-		panic(err)
+		logger.Fatal(err.Error())
 	}
 
 	instanceID := discovery.GenerateInstanceID(serviceName)
 	if err := registry.Register(context.Background(), instanceID, serviceName, grpcAddr); err != nil {
-		panic(err)
+		logger.Fatal(err.Error())
 	}
 	go func() {
 		for {
 			if err := registry.HeartBeat(instanceID, serviceName); err != nil {
-				log.Fatalf("no heartbeat: %s", serviceName)
+				log.Fatalf("no heartbeat from %s to registry, err = %v", serviceName, err)
 			}
 			time.Sleep(1 * time.Second)
 		}
@@ -77,13 +83,13 @@ func main() {
 	store := NewStore()
 	svc := NewService(store)
 	svcWithTelemetry := NewTelemetryMiddleware(svc)
-	NewGRPCHandler(grpcSrv, svcWithTelemetry, ch)
+	svcWithLogging := NewLoggingMiddleware(svcWithTelemetry)
+	NewGRPCHandler(grpcSrv, svcWithLogging, ch)
 
-	consumer := NewConsumer(svcWithTelemetry)
+	consumer := NewConsumer(svcWithLogging)
 	go consumer.Listen(ch)
 
 	logger.Info("starting grpc server at %s", zap.String("grpcAddr", grpcAddr))
-	// svc.CreateOrder(context.Background())
 	if err := grpcSrv.Serve(l); err != nil {
 		log.Fatal(err.Error())
 	}
