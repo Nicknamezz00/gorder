@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"go.opentelemetry.io/otel"
 	"log"
 
 	pb "github.com/Nicknamezz00/gorder/pkg/api"
@@ -40,11 +42,9 @@ func (c *consumer) Listen(ch *amqp.Channel) {
 		for d := range msgs {
 			log.Printf("Received message: %s", d.Body)
 
-			// Extract the headers
-			//ctx := broker.ExtractAMQPHeader(context.Background(), d.Headers)
-
-			//tr := otel.Tracer("amqp")
-			//_, messageSpan := tr.Start(ctx, fmt.Sprintf("AMQP - consume - %s", q.Name))
+			ctx := broker.ExtractAMQPHeader(context.Background(), d.Headers)
+			tr := otel.Tracer("amqp")
+			_, messageSpan := tr.Start(ctx, fmt.Sprintf("AMQP - consume - %s", q.Name))
 
 			o := &pb.Order{}
 			if err := json.Unmarshal(d.Body, o); err != nil {
@@ -63,8 +63,8 @@ func (c *consumer) Listen(ch *amqp.Channel) {
 				continue
 			}
 
-			//messageSpan.AddEvent("order.updated")
-			//messageSpan.End()
+			messageSpan.AddEvent("order.updated")
+			messageSpan.End()
 
 			log.Println("order has been updated from AMQP")
 			d.Ack(false)

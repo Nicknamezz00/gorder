@@ -76,9 +76,10 @@ func main() {
 
 	store := NewStore()
 	svc := NewService(store)
-	NewGRPCHandler(grpcSrv, svc, ch)
+	svcWithTelemetry := NewTelemetryMiddleware(svc)
+	NewGRPCHandler(grpcSrv, svcWithTelemetry, ch)
 
-	consumer := NewConsumer(svc)
+	consumer := NewConsumer(svcWithTelemetry)
 	go consumer.Listen(ch)
 
 	logger.Info("starting grpc server at %s", zap.String("grpcAddr", grpcAddr))

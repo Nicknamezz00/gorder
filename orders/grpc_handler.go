@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"go.opentelemetry.io/otel"
 	"log"
 
 	pb "github.com/Nicknamezz00/gorder/pkg/api"
@@ -30,6 +32,14 @@ func (h *grpcHandler) GetOrder(ctx context.Context, req *pb.GetOrderRequest) (*p
 }
 
 func (h *grpcHandler) CreateOrder(ctx context.Context, req *pb.CreateOrderRequest) (*pb.Order, error) {
+	q, err := h.mqChannel.QueueDeclare(broker.OrderCreated, true, false, false, false, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	tr := otel.Tracer("amqp")
+	ctx, messageSpan := tr.Start(ctx, fmt.Sprintf("AMQP - publish - %s", q.Name))
+	defer messageSpan.End()
+
 	items, err := h.service.ValidateOrder(ctx, req)
 	if err != nil {
 		return nil, err
@@ -38,10 +48,7 @@ func (h *grpcHandler) CreateOrder(ctx context.Context, req *pb.CreateOrderReques
 	if err != nil {
 		return nil, err
 	}
-	q, err := h.mqChannel.QueueDeclare(broker.OrderCreated, true, false, false, false, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
+
 	marshalledOrder, err := json.Marshal(o)
 	if err != nil {
 		log.Fatal(err)
@@ -50,8 +57,8 @@ func (h *grpcHandler) CreateOrder(ctx context.Context, req *pb.CreateOrderReques
 		ContentType:  "application/json",
 		Body:         marshalledOrder,
 		DeliveryMode: amqp.Persistent,
+		Headers:      broker.InjectAMQPHeaders(ctx),
 	})
-	log.Printf("[CreateOrder] msg published: %s", string(marshalledOrder))
 	return o, nil
 }
 
