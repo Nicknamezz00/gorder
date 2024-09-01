@@ -26,7 +26,7 @@ jobs:
         for dir in $(find . -type f -name "go.mod" -exec dirname {} \;); do
           echo "Processing $dir"
           cd $dir
-          go mod tidy
+          # go mod tidy
           go build ./...
           cd - > /dev/null
         done
