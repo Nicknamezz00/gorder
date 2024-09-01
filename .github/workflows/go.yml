@@ -21,11 +21,12 @@ jobs:
       with:
         go-version: '1.22.4'
         
-    - name: Install dependencies
-      run: go mod tidy
-
-    - name: Build
-      run: go build -v ./...
-
-    # - name: Test
-    #   run: go test -v ./...
+    - name: Tidy, Build in subdirectories
+      run: |
+        for dir in $(find . -type f -name "go.mod" -exec dirname {} \;); do
+          echo "Processing $dir"
+          cd $dir
+          go mod tidy
+          go build ./...
+          cd - > /dev/null
+        done
