@@ -12,19 +12,19 @@ type PaymentsService interface {
 	CreatePayment(context.Context, *pb.Order) (string, error)
 }
 
-type service struct {
+type Service struct {
 	processor processor.PaymentProcessor
 	entry     entry.PaymentEntry
 }
 
-func NewService(processor processor.PaymentProcessor, paymentEntry entry.PaymentEntry) *service {
-	return &service{
+func NewService(processor processor.PaymentProcessor, paymentEntry entry.PaymentEntry) *Service {
+	return &Service{
 		processor: processor,
 		entry:     paymentEntry,
 	}
 }
 
-func (s *service) CreatePayment(ctx context.Context, o *pb.Order) (string, error) {
+func (s *Service) CreatePayment(ctx context.Context, o *pb.Order) (string, error) {
 	link, err := s.processor.CreatePaymentLink(o)
 	if err != nil {
 		return "", err

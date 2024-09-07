@@ -14,21 +14,21 @@ type OrderService interface {
 	UpdateOrder(context.Context, *pb.Order) (*pb.Order, error)
 }
 
-type service struct {
+type Service struct {
 	store OrderStore
 }
 
-func NewService(store OrderStore) *service {
-	return &service{
+func NewService(store OrderStore) *Service {
+	return &Service{
 		store: store,
 	}
 }
 
-func (s *service) GetOrder(ctx context.Context, req *pb.GetOrderRequest) (*pb.Order, error) {
+func (s *Service) GetOrder(ctx context.Context, req *pb.GetOrderRequest) (*pb.Order, error) {
 	return s.store.Get(ctx, req.OrderID, req.CustomerID)
 }
 
-func (s *service) CreateOrder(ctx context.Context, req *pb.CreateOrderRequest, items []*pb.Item) (*pb.Order, error) {
+func (s *Service) CreateOrder(ctx context.Context, req *pb.CreateOrderRequest, items []*pb.Item) (*pb.Order, error) {
 	id, err := s.store.Create(ctx, req, items)
 	if err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func (s *service) CreateOrder(ctx context.Context, req *pb.CreateOrderRequest, i
 	return o, nil
 }
 
-func (s *service) UpdateOrder(ctx context.Context, o *pb.Order) (*pb.Order, error) {
+func (s *Service) UpdateOrder(ctx context.Context, o *pb.Order) (*pb.Order, error) {
 	err := s.store.Update(ctx, o.ID, o)
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func (s *service) UpdateOrder(ctx context.Context, o *pb.Order) (*pb.Order, erro
 	return o, nil
 }
 
-func (s *service) ValidateOrder(ctx context.Context, req *pb.CreateOrderRequest) ([]*pb.Item, error) {
+func (s *Service) ValidateOrder(ctx context.Context, req *pb.CreateOrderRequest) ([]*pb.Item, error) {
 	if len(req.Items) == 0 {
 		return nil, errcode.ErrNoItems
 	}
