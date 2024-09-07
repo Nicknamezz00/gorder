@@ -62,6 +62,7 @@ func (c *Consumer) Listen(ch *amqp.Channel) {
 
 			messageSpan.End()
 			log.Printf("Order received: %s", orderID)
+			// TODO: Do ops to stock.
 		}
 	}()
 
