@@ -2,40 +2,32 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"github.com/Nicknamezz00/gorder/pkg/middleware"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"log"
-	"net"
-	"time"
-
+	"github.com/Nicknamezz00/gorder/kitchen/gateway"
 	"github.com/Nicknamezz00/gorder/pkg/broker"
 	"github.com/Nicknamezz00/gorder/pkg/discovery"
 	"github.com/Nicknamezz00/gorder/pkg/discovery/consul"
 	"github.com/Nicknamezz00/gorder/pkg/envutil"
-	_ "github.com/joho/godotenv/autoload"
+	"github.com/Nicknamezz00/gorder/pkg/middleware"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"log"
+	"net"
+	"time"
 )
 
 const (
-	serviceName = "orders"
+	serviceName = "stock"
 )
 
 var (
 	// expose grpc port to the outside
-	grpcAddr     = envutil.EnvString("GRPC_ADDR", "127.0.0.1:5000")
+	grpcAddr     = envutil.EnvString("GRPC_ADDR", "127.0.0.1:5003")
 	consulAddr   = envutil.EnvString("CONSUL_ADDR", "127.0.0.1:8500")
 	amqpUser     = envutil.EnvString("RABBITMQ_USER", "guest")
 	amqpPassword = envutil.EnvString("RABBITMQ_PASSWORD", "guest")
 	amqpHost     = envutil.EnvString("RABBITMQ_HOST", "127.0.0.1")
 	amqpPort     = envutil.EnvString("RABBITMQ_PORT", "5672")
 	jaegerAddr   = envutil.EnvString("JAEGER_ADDR", "127.0.0.1:4318")
-	mongoUser    = envutil.EnvString("MONGO_DB_USER", "root")
-	mongoPass    = envutil.EnvString("MONGO_DB_PASS", "example")
-	mongoAddr    = envutil.EnvString("MONGO_DB_HOST", "localhost:27017")
 )
 
 func main() {
@@ -83,39 +75,17 @@ func main() {
 	grpcSrv := grpc.NewServer()
 	l, err := net.Listen("tcp", grpcAddr)
 	if err != nil {
-		logger.Fatal("failed to listen grpc server", zap.String("err", err.Error()))
+		log.Fatalf("failed to listen grpc server: %v", err)
 	}
 	defer l.Close()
 
-	// mongo
-	uri := fmt.Sprintf("mongodb://%s:%s@%s", mongoUser, mongoPass, mongoAddr)
-	mongoClient, err := connectToMongoDB(uri)
-	if err != nil {
-		logger.Fatal("failed to connect to mongo db", zap.Error(err))
-	}
+	entry := gateway.New(registry)
 
-	store := NewStore(mongoClient)
-	svc := NewService(store)
-	svcWithTelemetry := NewTelemetryMiddleware(svc)
-	svcWithLogging := NewLoggingMiddleware(svcWithTelemetry)
-	NewGRPCHandler(grpcSrv, svcWithLogging, ch)
-
-	consumer := NewConsumer(svcWithLogging)
+	consumer := NewConsumer(entry)
 	go consumer.Listen(ch)
 
 	logger.Info("starting grpc server at %s", zap.String("grpcAddr", grpcAddr))
 	if err := grpcSrv.Serve(l); err != nil {
 		log.Fatal(err.Error())
 	}
-}
-
-func connectToMongoDB(uri string) (*mongo.Client, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
-	if err != nil {
-		return nil, err
-	}
-	err = client.Ping(ctx, readpref.Primary())
-	return client, err
 }

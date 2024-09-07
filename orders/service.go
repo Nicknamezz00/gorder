@@ -25,21 +25,43 @@ func NewService(store OrderStore) *Service {
 }
 
 func (s *Service) GetOrder(ctx context.Context, req *pb.GetOrderRequest) (*pb.Order, error) {
-	return s.store.Get(ctx, req.OrderID, req.CustomerID)
+	o, err := s.store.Get(ctx, req.OrderID, req.CustomerID)
+	if err != nil {
+		return nil, err
+	}
+	return o.ToProto(), nil
 }
 
 func (s *Service) CreateOrder(ctx context.Context, req *pb.CreateOrderRequest, items []*pb.Item) (*pb.Order, error) {
-	id, err := s.store.Create(ctx, req, items)
+	//id, err := s.store.Create(ctx, req, items)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//o := &pb.Order{
+	//	ID:         id,
+	//	CustomerID: req.CustomerID,
+	//	Status:     "pending",
+	//	Items:      items,
+	//}
+	//return o, nil
+	id, err := s.store.Create(ctx, Order{
+		CustomerID:  req.CustomerID,
+		Status:      "pending",
+		Items:       items,
+		PaymentLink: "",
+	})
 	if err != nil {
 		return nil, err
 	}
 	o := &pb.Order{
-		ID:         id,
+		ID:         id.Hex(),
 		CustomerID: req.CustomerID,
 		Status:     "pending",
 		Items:      items,
 	}
+
 	return o, nil
+
 }
 
 func (s *Service) UpdateOrder(ctx context.Context, o *pb.Order) (*pb.Order, error) {
